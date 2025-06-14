@@ -7,14 +7,14 @@
 #include "Packet.h"
 #include "Transport.h"
 namespace YunaProtocol {
-    using DataCallback = std::function<void (Packet)>;
+
     class YunaNode {
 
 
 
     protected:
         uint32_t id = 0;
-        std::unordered_map <std::string, DataCallback> dataCallbacks;
+        std::unordered_map <std::string, DataReceivedCallback> dataCallbacks;
         std::vector<std::unique_ptr<YunaTransport>> transports;
 
 
@@ -34,7 +34,7 @@ namespace YunaProtocol {
      * @param channel The channel name to register the callback for.
      * @param callback The function to execute when a DATA packet is received.
      */
-         void registerDataCallback(const  char channel[32],DataCallback callback) ;
+         void registerDataCallback(const  char channel[32],DataReceivedCallback callback) ;
 
         /**
      * @brief Sends data to a known destination node.

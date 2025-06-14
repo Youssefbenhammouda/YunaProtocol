@@ -193,7 +193,7 @@ namespace YunaProtocol {
         sockaddr_in broadcastAddr{};
         broadcastAddr.sin_family = AF_INET;
         broadcastAddr.sin_port = htons(this->broadcastPort); // Broadcast on the same port we listen on.
-        broadcastAddr.sin_addr.s_addr = INADDR_BROADCAST; // The IPv4 broadcast address.
+        broadcastAddr.sin_addr.s_addr = inet_addr("192.168.11.255");
 
         // Send the buffer.
         int bytesSent = sendto(listenSocket, (const char*)buffer.data(), static_cast<int>(buffer.size()), 0, (sockaddr*)&broadcastAddr, sizeof(broadcastAddr));

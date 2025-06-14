@@ -1,0 +1,15 @@
+{
+  "name": "YunaProtocol",
+  "version": "1.0.0",
+  "dependencies": [
+    "ESP8266WiFi"
+  ],
+  "build": {
+    "srcFilter": [
+      "+<core/src/>",
+      "+<platforms/Arduino/src/>",
+      "-<platforms/Windows/>",
+      "-<platforms/Linux/>"
+    ]
+  }
+}

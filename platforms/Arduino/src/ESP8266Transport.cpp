@@ -5,7 +5,7 @@
 #include "ESP8266Transport.h"
 
 // Define a constant for the discovery broadcast interval (in milliseconds)
-#define DISCOVERY_INTERVAL 5000
+#define DISCOVERY_INTERVAL 100
 
 namespace YunaProtocol {
 

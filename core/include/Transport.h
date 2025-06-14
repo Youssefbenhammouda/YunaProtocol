@@ -8,11 +8,12 @@
 
 #include "Packet.h"
 namespace YunaProtocol {
+    using DataReceivedCallback = std::function<void(const Packet& packet)>;
     class YunaTransport {
 
 
     public:
-        using DataReceivedCallback = std::function<void(const Packet& packet)>;
+
         DataReceivedCallback callback;
         uint32_t clientID = 0;
         // Virtual destructor to ensure proper cleanup of derived classes.

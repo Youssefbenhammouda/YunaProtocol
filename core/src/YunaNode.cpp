@@ -12,7 +12,7 @@ uint32_t YunaProtocol::YunaNode::getNodeId() const {
     return this->id;
 }
 
-void YunaProtocol::YunaNode:: registerDataCallback(const char channel[32],DataCallback callback)  {
+void YunaProtocol::YunaNode:: registerDataCallback(const char channel[32],DataReceivedCallback callback)  {
 
     dataCallbacks[std::string(channel)]= std::move(callback);
 
