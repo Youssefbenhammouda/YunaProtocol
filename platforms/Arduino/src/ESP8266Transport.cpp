@@ -82,8 +82,8 @@ namespace YunaProtocol {
                         IPAddress remoteIp = udp.remoteIP();
                         if (clients.find(receivedPacket.header.sourceId) == clients.end()) {
                             Serial.printf("New client discovered with ID: %u at %s\n", receivedPacket.header.sourceId, remoteIp.toString().c_str());
-                            // FIX: Store the IP address as a uint32_t to avoid alignment issues
-                            clients.emplace(receivedPacket.header.sourceId, static_cast<uint32_t>(remoteIp));
+                            uint32_t alignedSourceId = receivedPacket.header.sourceId;
+                            clients.emplace(alignedSourceId, remoteIp);
                         }
                     }
 

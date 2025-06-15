@@ -28,7 +28,7 @@ namespace YunaProtocol {
         unsigned long lastDiscoveryBroadcast; // Timestamp of the last discovery broadcast
 
         // A map to store discovered clients, mapping their client ID to their IP address.
-        std::map<uint32_t, uint32_t> clients;
+        std::map<uint32_t, IPAddress> clients;
 
     public:
         /**
