@@ -82,7 +82,7 @@ namespace YunaProtocol {
                         IPAddress remoteIp = udp.remoteIP();
                         if (clients.find(receivedPacket.header.sourceId) == clients.end()) {
                             Serial.printf("New client discovered with ID: %u at %s\n", receivedPacket.header.sourceId, remoteIp.toString().c_str());
-                            clients[receivedPacket.header.sourceId] = remoteIp;
+                            clients.emplace(receivedPacket.header.sourceId, remoteIp);
                         }
                     }
 
