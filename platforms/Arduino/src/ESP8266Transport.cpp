@@ -43,7 +43,7 @@ namespace YunaProtocol {
         return true;
     }
 
-void ESP8266Transport::loop() {
+    void ESP8266Transport::loop() {
         if (!initialized) return;
 
         // 1. Periodically broadcast a discovery packet to find other peers.
@@ -77,20 +77,14 @@ void ESP8266Transport::loop() {
                         return;
                     }
 
-                    // --- Client Discovery Logic using std::vector ---
-                    IPAddress remoteIp = udp.remoteIP();
-                    auto it = std::find_if(clients.begin(), clients.end(),
-                                           [&](const auto& client_pair) {
-                                               return client_pair.first == receivedPacket.header.sourceId;
-                                           });
-
-                    // If client is not found in the vector, add it.
-                    if (it == clients.end()) {
-                        Serial.printf("New client discovered with ID: %u at %s\n", receivedPacket.header.sourceId, remoteIp.toString().c_str());
-                        clients.emplace_back(receivedPacket.header.sourceId, remoteIp);
+                    // Handle peer discovery and client list management.
+                    if (receivedPacket.header.packetType == DISCOVERY_PEER || clients.find(receivedPacket.header.sourceId) == clients.end()) {
+                        IPAddress remoteIp = udp.remoteIP();
+                        if (clients.find(receivedPacket.header.sourceId) == clients.end()) {
+                            Serial.printf("New client discovered with ID: %u at %s\n", receivedPacket.header.sourceId, remoteIp.toString().c_str());
+                            clients[receivedPacket.header.sourceId] = remoteIp;
+                        }
                     }
-                    // --- End of updated logic ---
-
 
                     // For any packet that isn't for discovery, pass it to the callback.
                     if (receivedPacket.header.packetType != DISCOVERY_PEER) {
@@ -104,6 +98,7 @@ void ESP8266Transport::loop() {
             }
         }
     }
+
     bool ESP8266Transport::send(const Packet& packet) {
         if (!initialized) return false;
 
