@@ -1,66 +1,88 @@
-//
-// Created by youss on 6/13/2025.
-//
+// Corrected Packet.cpp
 
 #include "Packet.h"
 #include <cstring>
-#include <cstddef> // Required for offsetof
 
 using namespace YunaProtocol;
 
+// SERIALIZE: Member by member
 bool Packet::serialize(std::vector<uint8_t>& buffer) const {
-    size_t totalSize = sizeof(PacketHeader) + payload.size();
-    try {
-        buffer.resize(totalSize);
-    } catch (...) {
-        return false; // Not enough memory
-    }
+    size_t headerSize = sizeof(PacketHeader);
+    size_t payloadSize = payload.size();
+    size_t totalSize = headerSize + payloadSize;
+    buffer.resize(totalSize);
 
+    // Use a pointer to step through the buffer
     char* ptr = reinterpret_cast<char*>(buffer.data());
 
-    // This is robust. The compiler calculates the correct offsets automatically.
-    std::memcpy(ptr + offsetof(PacketHeader, protocolVersion), &header.protocolVersion, sizeof(header.protocolVersion));
-    std::memcpy(ptr + offsetof(PacketHeader, packetType),      &header.packetType,      sizeof(header.packetType));
-    std::memcpy(ptr + offsetof(PacketHeader, sourceId),        &header.sourceId,        sizeof(header.sourceId));
-    std::memcpy(ptr + offsetof(PacketHeader, payloadLength),   &header.payloadLength,   sizeof(header.payloadLength));
-    std::memcpy(ptr + offsetof(PacketHeader, channel),         &header.channel,         sizeof(header.channel));
-    std::memcpy(ptr + offsetof(PacketHeader, channelPassword), &header.channelPassword, sizeof(header.channelPassword));
+    // Serialize header field by field
+    std::memcpy(ptr, &header.protocolVersion, sizeof(header.protocolVersion));
+    ptr += sizeof(header.protocolVersion);
 
-    if (!payload.empty()) {
-        std::memcpy(ptr + sizeof(PacketHeader), payload.data(), payload.size());
+    std::memcpy(ptr, &header.packetType, sizeof(header.packetType));
+    ptr += sizeof(header.packetType);
+
+    std::memcpy(ptr, &header.sourceId, sizeof(header.sourceId));
+    ptr += sizeof(header.sourceId);
+
+    std::memcpy(ptr, &header.channel, sizeof(header.channel));
+    ptr += sizeof(header.channel);
+
+    std::memcpy(ptr, &header.channelPassword, sizeof(header.channelPassword));
+    ptr += sizeof(header.channelPassword);
+
+    // Important: Update payloadLength in the header before serializing it
+    PacketHeader tempHeader = header;
+    tempHeader.payloadLength = payloadSize;
+    std::memcpy(ptr, &tempHeader.payloadLength, sizeof(tempHeader.payloadLength));
+    ptr += sizeof(tempHeader.payloadLength);
+
+
+    // Serialize payload
+    if (payloadSize > 0) {
+        std::memcpy(ptr, payload.data(), payloadSize);
     }
 
     return true;
 }
 
+// DESERIALIZE: Member by member
 bool Packet::deserialize(const uint8_t* buffer, size_t size) {
-    if (size < sizeof(PacketHeader)) {
+    size_t headerSize = sizeof(PacketHeader);
+    if (size < headerSize) {
         return false;
     }
 
     const char* ptr = reinterpret_cast<const char*>(buffer);
 
-    // This version is safe from unaligned access AND easy to maintain.
-    std::memcpy(&header.protocolVersion, ptr + offsetof(PacketHeader, protocolVersion), sizeof(header.protocolVersion));
-    std::memcpy(&header.packetType,      ptr + offsetof(PacketHeader, packetType),      sizeof(header.packetType));
-    std::memcpy(&header.sourceId,        ptr + offsetof(PacketHeader, sourceId),        sizeof(header.sourceId));
-    std::memcpy(&header.payloadLength,   ptr + offsetof(PacketHeader, payloadLength),   sizeof(header.payloadLength));
-    std::memcpy(&header.channel,         ptr + offsetof(PacketHeader, channel),         sizeof(header.channel));
-    std::memcpy(&header.channelPassword, ptr + offsetof(PacketHeader, channelPassword), sizeof(header.channelPassword));
+    // Deserialize header field by field
+    std::memcpy(&header.protocolVersion, ptr, sizeof(header.protocolVersion));
+    ptr += sizeof(header.protocolVersion);
 
-    // Now that the header is safely populated, check the payload.
-    if (size - sizeof(PacketHeader) != header.payloadLength) {
+    std::memcpy(&header.packetType, ptr, sizeof(header.packetType));
+    ptr += sizeof(header.packetType);
+
+    std::memcpy(&header.sourceId, ptr, sizeof(header.sourceId));
+    ptr += sizeof(header.sourceId);
+
+    std::memcpy(&header.channel, ptr, sizeof(header.channel));
+    ptr += sizeof(header.channel);
+
+    std::memcpy(&header.channelPassword, ptr, sizeof(header.channelPassword));
+    ptr += sizeof(header.channelPassword);
+
+    std::memcpy(&header.payloadLength, ptr, sizeof(header.payloadLength));
+    ptr += sizeof(header.payloadLength);
+
+    // Verify payload size
+    if (size - headerSize < header.payloadLength) {
         return false;
     }
 
-    payload.clear();
+    // Deserialize payload
+    payload.resize(header.payloadLength);
     if (header.payloadLength > 0) {
-        if (size >= sizeof(PacketHeader) + header.payloadLength) {
-            payload.resize(header.payloadLength);
-            std::memcpy(payload.data(), ptr + sizeof(PacketHeader), header.payloadLength);
-        } else {
-            return false; // Packet size mismatch
-        }
+        std::memcpy(payload.data(), ptr, header.payloadLength);
     }
 
     return true;
