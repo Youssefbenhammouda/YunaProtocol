@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
         node1.loop();
 
 
-
+        std::this_thread::sleep_for(std::chrono::milliseconds(4000)); // Sleep to avoid busy waiting
 
 
     }
