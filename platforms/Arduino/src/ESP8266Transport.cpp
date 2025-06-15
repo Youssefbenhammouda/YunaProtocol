@@ -43,7 +43,7 @@ namespace YunaProtocol {
         return true;
     }
 
-    void ESP8266Transport::loop() {
+void ESP8266Transport::loop() {
         if (!initialized) return;
 
         // 1. Periodically broadcast a discovery packet to find other peers.
@@ -77,14 +77,20 @@ namespace YunaProtocol {
                         return;
                     }
 
-                    // Handle peer discovery and client list management.
-                    if (receivedPacket.header.packetType == DISCOVERY_PEER || clients.find(receivedPacket.header.sourceId) == clients.end()) {
-                        IPAddress remoteIp = udp.remoteIP();
-                        if (clients.find(receivedPacket.header.sourceId) == clients.end()) {
-                            Serial.printf("New client discovered with ID: %u at %s\n", receivedPacket.header.sourceId, remoteIp.toString().c_str());
-                            clients[receivedPacket.header.sourceId] = remoteIp;
-                        }
+                    // --- Client Discovery Logic using std::vector ---
+                    IPAddress remoteIp = udp.remoteIP();
+                    auto it = std::find_if(clients.begin(), clients.end(),
+                                           [&](const auto& client_pair) {
+                                               return client_pair.first == receivedPacket.header.sourceId;
+                                           });
+
+                    // If client is not found in the vector, add it.
+                    if (it == clients.end()) {
+                        Serial.printf("New client discovered with ID: %u at %s\n", receivedPacket.header.sourceId, remoteIp.toString().c_str());
+                        clients.emplace_back(receivedPacket.header.sourceId, remoteIp);
                     }
+                    // --- End of updated logic ---
+
 
                     // For any packet that isn't for discovery, pass it to the callback.
                     if (receivedPacket.header.packetType != DISCOVERY_PEER) {
@@ -98,12 +104,43 @@ namespace YunaProtocol {
             }
         }
     }
-
     bool ESP8266Transport::send(const Packet& packet) {
         if (!initialized) return false;
 
-        // For this implementation, send() is the same as broadcast().
-        return broadcast(packet);
+
+        // Serialize the packet into a buffer.
+        std::vector<uint8_t> buffer;
+        if (!packet.serialize(buffer)) {
+            Serial.println("Failed to serialize packet for sending.");
+            return false;
+        }
+
+        if (clients.empty()) {
+            // Optional: Log if there are no clients to send to.
+            // std::cout << "No clients connected, nothing to send." << std::endl;
+            return true; // Return true as there was no error.
+        }
+        // Send the packet to all clients in the map, sourceID is the node id not the destination id.
+        for (const auto& client_pair : clients) {
+            // client_pair.first is the client's node ID (uint32_t)
+            // client_pair.second is the client's IP address (IPAddress)
+            const IPAddress& clientAddr = client_pair.second;
+
+            udp.beginPacket(clientAddr, broadcastPort);
+            udp.write(buffer.data(), buffer.size());
+            if (!udp.endPacket()) {
+                Serial.printf("Failed to send packet to client %u at %s\n", client_pair.first, clientAddr.toString().c_str());
+            }
+        }
+
+
+
+
+
+
+
+
+        return true;
     }
 
     bool ESP8266Transport::broadcast(const Packet& packet) {

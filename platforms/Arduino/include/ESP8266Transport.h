@@ -8,7 +8,7 @@
 #include "Transport.h"
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
-#include <map>
+
 
 namespace YunaProtocol {
 
@@ -28,7 +28,7 @@ namespace YunaProtocol {
         unsigned long lastDiscoveryBroadcast; // Timestamp of the last discovery broadcast
 
         // A map to store discovered clients, mapping their client ID to their IP address.
-        std::map<uint32_t, IPAddress> clients;
+        std::vector<std::pair<uint32_t, IPAddress>> clients;
 
     public:
         /**
