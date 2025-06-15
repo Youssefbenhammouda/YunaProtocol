@@ -1,5 +1,5 @@
 # Create an executable for the Windows platform.
-add_library(WindowsLib STATIC)
+add_library(WindowsLib SHARED)
 
 # Automatically find all source files in the 'src' directory for this platform.
 file(GLOB WINDOWS_SOURCES "src/*.cpp")

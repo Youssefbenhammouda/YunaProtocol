@@ -73,16 +73,17 @@ namespace YunaProtocol {
                 Packet receivedPacket;
                 if (receivedPacket.deserialize(buffer.data(), bytesRead)) {
                     // Ignore packets sent by ourselves.
-                    if (receivedPacket.header.sourceId == clientID) {
+                    uint32_t alignedSourceId = receivedPacket.header.sourceId;
+                    if (alignedSourceId == clientID) {
                         return;
                     }
 
                     // Handle peer discovery and client list management.
-                    if (receivedPacket.header.packetType == DISCOVERY_PEER || clients.find(receivedPacket.header.sourceId) == clients.end()) {
+                    if (receivedPacket.header.packetType == DISCOVERY_PEER || clients.find(alignedSourceId) == clients.end()) {
                         IPAddress remoteIp = udp.remoteIP();
-                        if (clients.find(receivedPacket.header.sourceId) == clients.end()) {
-                            Serial.printf("New client discovered with ID: %u at %s\n", receivedPacket.header.sourceId, remoteIp.toString().c_str());
-                            uint32_t alignedSourceId = receivedPacket.header.sourceId;
+                        if (clients.find(alignedSourceId) == clients.end()) {
+                            Serial.printf("New client discovered with ID: %u at %s\n", alignedSourceId, remoteIp.toString().c_str());
+
                             clients.emplace(alignedSourceId, remoteIp);
                         }
                     }
