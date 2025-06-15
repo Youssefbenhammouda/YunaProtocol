@@ -5,6 +5,7 @@
 #include "WindowsTransport.h"
 #include <iostream> // For error logging
 
+
 namespace YunaProtocol {
 
     // --- Constructor & Destructor ---
@@ -28,13 +29,13 @@ namespace YunaProtocol {
 
     // --- Interface Implementation ---
 
-    void WindowsTransport::initialize() {
+    bool WindowsTransport::initialize() {
         // 1. Initialize Winsock
         WSADATA wsaData;
         int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
         if (result != 0) {
             std::cerr << "WSAStartup failed with error: " << result << std::endl;
-            return;
+            return false;
         }
 
         // 2. Create a UDP socket
@@ -42,7 +43,7 @@ namespace YunaProtocol {
         if (listenSocket == INVALID_SOCKET) {
             std::cerr << "socket failed with error: " << WSAGetLastError() << std::endl;
             WSACleanup();
-            return;
+            return false;
         }
 
         // 3. Bind the socket to a local address and port
@@ -54,7 +55,7 @@ namespace YunaProtocol {
             std::cerr << "bind failed with error: " << WSAGetLastError() << std::endl;
             closesocket(listenSocket);
             WSACleanup();
-            return;
+            return false;
         }
 
         // 4. Enable broadcasting
@@ -63,7 +64,7 @@ namespace YunaProtocol {
             std::cerr << "setsockopt SO_BROADCAST failed with error: " << WSAGetLastError() << std::endl;
             closesocket(listenSocket);
             WSACleanup();
-            return;
+            return false;
         }
 
         // 5. Set the socket to non-blocking mode
@@ -72,17 +73,25 @@ namespace YunaProtocol {
             std::cerr << "ioctlsocket FIONBIO failed with error: " << WSAGetLastError() << std::endl;
             closesocket(listenSocket);
             WSACleanup();
-            return;
+            return false;
         }
 
         initialized = true;
         std::cout << "WindowsTransport initialized successfully on port " << this->listeningPort << "." << std::endl;
+        return true;
     }
 
     void WindowsTransport::loop() {
         if (!initialized) return;
         // Broadcast Discovery Peer Packet
-        {
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastDiscoveryBroadcast);
+
+        if (elapsed.count() > WINDOWS_DISCOVERY_INTERVAL) { // Broadcast only once per second
+
+
+
+            lastDiscoveryBroadcast = now;
             Packet discoveryPacket;
             discoveryPacket.header.protocolVersion = 1;
             discoveryPacket.header.packetType = DISCOVERY_PEER;
@@ -163,8 +172,6 @@ namespace YunaProtocol {
     bool WindowsTransport::send(const Packet& packet) {
         if (!initialized) return false;
 
-        // The packet's sourceId is used as the destination client ID.
-
 
         // Serialize the packet into a buffer.
         std::vector<uint8_t> buffer;
@@ -172,8 +179,42 @@ namespace YunaProtocol {
             std::cerr << "Failed to serialize packet for sending." << std::endl;
             return false;
         }
-        //Broadcast the packet
-        broadcast(packet);
+
+        if (clients.empty()) {
+            // Optional: Log if there are no clients to send to.
+            // std::cout << "No clients connected, nothing to send." << std::endl;
+            return true; // Return true as there was no error.
+        }
+        // Send the packet to all clients in the map, sourceID is the node id not the destination id.
+        for (const auto& client_pair : clients) {
+            // client_pair.first is the client's node ID (uint32_t)
+            // client_pair.second is the client's address (sockaddr_in)
+            const sockaddr_in& clientAddr = client_pair.second;
+
+            int bytesSent = sendto(
+                listenSocket,
+                (const char*)buffer.data(),
+                static_cast<int>(buffer.size()),
+                0,
+                (const sockaddr*)&clientAddr,
+                sizeof(clientAddr)
+            );
+
+            if (bytesSent == SOCKET_ERROR) {
+                std::cerr << "sendto failed for client " << client_pair.first
+                          << " with error: " << WSAGetLastError() << std::endl;
+                // You might want to return false here or continue to send to other clients
+            }
+        }
+
+
+
+
+
+
+
+
+
         return true;
 
 
@@ -193,7 +234,7 @@ namespace YunaProtocol {
         sockaddr_in broadcastAddr{};
         broadcastAddr.sin_family = AF_INET;
         broadcastAddr.sin_port = htons(this->broadcastPort); // Broadcast on the same port we listen on.
-        broadcastAddr.sin_addr.s_addr = inet_addr("192.168.11.255");
+        broadcastAddr.sin_addr.s_addr = INADDR_BROADCAST;
 
         // Send the buffer.
         int bytesSent = sendto(listenSocket, (const char*)buffer.data(), static_cast<int>(buffer.size()), 0, (sockaddr*)&broadcastAddr, sizeof(broadcastAddr));

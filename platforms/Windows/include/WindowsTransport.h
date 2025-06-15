@@ -7,6 +7,7 @@
 
 // --- System Includes ---
 // The following headers are required for Windows Sockets (Winsock)
+#define WINDOWS_DISCOVERY_INTERVAL 5000
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <map>
@@ -14,6 +15,7 @@
 
 // --- Project Includes ---
 #include "Transport.h" // Base class interface
+#include <chrono>
 
 // --- Library Linking ---
 // This pragma directive automatically links the required Ws2_32.lib for Winsock functions.
@@ -56,7 +58,7 @@ namespace YunaProtocol {
          * 4. Enables broadcasting on the socket.
          * 5. Sets the socket to non-blocking mode to prevent the loop() from halting execution.
          */
-        void initialize() override;
+        bool initialize() override;
 
         /**
          * @brief Sends a packet to a specific destination.
@@ -110,7 +112,8 @@ namespace YunaProtocol {
         int listeningPort;                                           // The port number for listening
         int broadcastPort;                                            // The port number for  broadcasting.
         std::map<uint32_t, sockaddr_in> clients;              // A map to store the addresses of known clients [ClientID -> Address].
-        bool initialized;                                     // Flag to track if initialize() has been called successfully.
+        bool initialized;
+        std::chrono::steady_clock::time_point lastDiscoveryBroadcast{};// Flag to track if initialize() has been called successfully.
     };
 
 } // namespace YunaProtocol

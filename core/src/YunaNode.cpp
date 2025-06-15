@@ -12,9 +12,9 @@ uint32_t YunaProtocol::YunaNode::getNodeId() const {
     return this->id;
 }
 
-void YunaProtocol::YunaNode:: registerDataCallback(const char channel[32],DataReceivedCallback callback)  {
+void YunaProtocol::YunaNode:: registerDataCallback(const std::string& channel,DataReceivedCallback callback)  {
 
-    dataCallbacks[std::string(channel)]= std::move(callback);
+    dataCallbacks[channel]= std::move(callback);
 
 }
 
@@ -61,8 +61,6 @@ void YunaProtocol::YunaNode::handleDataPacket(const Packet& packet) const {
     auto it = dataCallbacks.find(channel);
     if (it != dataCallbacks.end()) {
         it->second(packet); // Call the registered callback with the packet
-    } else {
-        std::cerr << "No callback registered for channel: " << channel << std::endl;
     }
 
 

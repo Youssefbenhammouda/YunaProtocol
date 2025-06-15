@@ -5,7 +5,7 @@
 #include "ESP8266Transport.h"
 
 // Define a constant for the discovery broadcast interval (in milliseconds)
-#define DISCOVERY_INTERVAL 100
+#define DISCOVERY_INTERVAL 5000
 
 namespace YunaProtocol {
 
@@ -25,21 +25,22 @@ namespace YunaProtocol {
 
     // --- Interface Implementation ---
 
-    void ESP8266Transport::initialize() {
+    bool ESP8266Transport::initialize() {
         // 1. Check if the ESP8266 is connected to Wi-Fi.
         if (WiFi.status() != WL_CONNECTED) {
             Serial.println("Error: Wi-Fi not connected. Cannot initialize ESP8266Transport.");
-            return;
+            return false;
         }
 
         // 2. Start the UDP client on the specified listening port.
         if (!udp.begin(listeningPort)) {
             Serial.printf("Error: Failed to start UDP listener on port %d\n", listeningPort);
-            return;
+            return false;
         }
 
         initialized = true;
         Serial.printf("ESP8266Transport initialized successfully on port %d.\n", listeningPort);
+        return true;
     }
 
     void ESP8266Transport::loop() {

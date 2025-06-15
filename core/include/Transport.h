@@ -33,7 +33,7 @@ namespace YunaProtocol {
          * @brief Initializes the transport layer.
 
          */
-        virtual void initialize() = 0;
+        virtual bool initialize() = 0;
 
         /**
          * @brief Sends data to a specific destination.

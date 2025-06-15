@@ -48,7 +48,7 @@ namespace YunaProtocol {
          * @brief Initializes the transport layer. Must be called before any other operation.
          * It starts listening for UDP packets on the specified port.
          */
-        void initialize() override;
+        bool initialize() override;
 
         /**
          * @brief The main loop for the transport layer. Should be called repeatedly.

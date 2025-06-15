@@ -24,7 +24,7 @@ bool Packet::deserialize(const uint8_t *buffer, size_t size) {
     }
     std::memcpy(&header,buffer,sizeof(PacketHeader));
 
-    if (size-sizeof(PacketHeader)!= header.payloadLength) {
+    if (size-sizeof(PacketHeader) < header.payloadLength) {
         return false;
 
     }

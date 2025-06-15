@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
 
 
-        while (node1.listConnectedClients().size() ==0 ) {
+        while (node1.listConnectedClients().empty()) {
             node1.loop();
 
             std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Sleep to avoid busy waiting
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     while (1) {
         node1.loop();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Sleep to avoid busy waiting
+
 
 
 

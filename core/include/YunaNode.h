@@ -34,7 +34,7 @@ namespace YunaProtocol {
      * @param channel The channel name to register the callback for.
      * @param callback The function to execute when a DATA packet is received.
      */
-         void registerDataCallback(const  char channel[32],DataReceivedCallback callback) ;
+         void registerDataCallback(const std::string& channel,DataReceivedCallback callback) ;
 
         /**
      * @brief Sends data to a known destination node.
