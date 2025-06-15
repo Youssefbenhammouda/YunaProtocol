@@ -7,13 +7,15 @@
 #include <cstring>
 using namespace YunaProtocol;
 bool Packet::serialize(std::vector<uint8_t> &buffer) const {
-    size_t totalSize = sizeof(PacketHeader)+ payload.size();
-    try{buffer.resize(totalSize);}
-    catch (...) {
-        return false;
+    size_t payloadSize = payload.size();
+    size_t headerSize = sizeof(PacketHeader);
+    size_t totalSize = headerSize+ payloadSize;
+   buffer.resize(totalSize);
+
+    std::memcpy(buffer.data(), &header, headerSize);
+    if (payloadSize > 0) {
+        std::memcpy(buffer.data() + headerSize, payload.data(), payloadSize);
     }
-    std::memcpy(buffer.data(), &header, sizeof(PacketHeader));
-    std::memcpy(buffer.data()+sizeof(PacketHeader), payload.data(), payload.size());
     return true;
 }
 
